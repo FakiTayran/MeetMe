@@ -1,0 +1,8 @@
+﻿# herşeyi ignore et
+*
+
+# bu dosyalar hariç
+!.gitignore
+!meeting_emptypng.png
+!meeting1.jpg
+!meeting2.jpg

@@ -1,0 +1,110 @@
+﻿@model HomeViewModel
+@{ ViewData["Title"] = "Home Page"; }
+
+<div class="text-center">
+    <h1 class="display-4">Meet Me</h1>
+    <p>A website where you can meet me!</p>
+</div>
+
+@if (!User.Identity.IsAuthenticated)
+{
+    <alert-message class="text-center" alert-type="Info">Hurry up to <a asp-area="Identity" asp-page="/Account/Register">sign up</a> to be able to join many events!</alert-message>
+}
+
+<div class="row">
+    @foreach (var meeting in Model.Meetings)
+    {
+<div class="col-lg-6">
+    <div class="card flex-row-reverse mb-3 card-meeting">
+        @if (string.IsNullOrEmpty(meeting.PhotoPath))
+        {
+<img src="~/img/meeting_emptypng.png" class="meeting-img" alt="@meeting.Title"> }
+else
+{
+<img src="~/img/@meeting.PhotoPath" class="meeting-img" alt="@meeting.Title">}
+        <div class="card-body">
+            <h5 class="card-title meeting-title">@meeting.Title</h5>
+            <p class="card-text meeting-desc mb-0">
+                @meeting.Description <br />
+            </p>
+            <p class="card-text mt-0">
+                <strong>Place:</strong> @meeting.Place <br />
+                <strong>Date:</strong> @meeting.MeetingTime
+            </p>
+            <form class="frmJoin" asp-antiforgery="true">
+                <input type="hidden" name="meetingId" value="@meeting.Id" />
+                <button class="btn btn-success">
+                    @if (meeting.IsJoined)
+                    {
+                        <i class="fas fa-check"></i>
+                        <span>Joined</span> }
+                    else
+                    {
+                        <i class="fas fa-plus"></i>
+                        <span>Join</span>}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>}
+</div>
+@{ var itemsStart = (Model.Page - 1) * Model.PageSize + 1;
+    var pageNumbers = WebUtilities.Pagination(Model.Page, Model.PageCount); }
+<div class="text-center my-2">
+    Showing @itemsStart - @(itemsStart + Model.ItemsCount-1) of @Model.TotalItemsCount Total items
+</div>
+<nav aria-label="...">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(Model.IsPrevious ? "" : "disabled")">
+            <a class="page-link" tabindex="-1" asp-route-page="@(Model.Page-1)">Previous</a>
+        </li>
+        @foreach (int i in pageNumbers)
+        {
+            if (i == -1)
+            {
+                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+            }
+            else
+            {
+                 <li class="page-item @(i == Model.Page ? "active" : "")"><a class="page-link" asp-route-page="@i">@i</a></li>
+            }
+        }
+                 <li class="page-item @(Model.IsNext ? "" : "disabled")">
+                        <a class="page-link" asp-route-page="@(Model.Page+1)">Next</a>
+                 </li>
+    </ul>
+</nav>
+@section scripts {
+    <script>
+        var isAuthenticated = @(User.Identity.IsAuthenticated ? "true":"false");
+
+        $("form.frmJoin").submit(function (e) {
+            e.preventDefault();
+            var frm = this;
+
+            if (isAuthenticated) {
+                $.ajax({
+                    type: "post",
+                    url: "@Url.Action("JoinMeeting","Home")",
+                    data: $(frm).serialize(),
+                    success: function (data) {
+                        if (data.result=="joined") {
+                            $(frm).find("button i").removeClass("fa-plus").addClass("fa-check");
+                            $(frm).find("span").text("Joined");
+                        }
+                        else {
+                            $(frm).find("button i").removeClass("fa-check").addClass("fa-plus");
+                            $(frm).find("span").text("Join");
+                        }
+                    },
+                });
+            }
+            else {
+                location.href = "@Url.Page("/Account/Login",new {area="Identity"})";
+            }
+
+        })
+
+
+    </script>
+}
